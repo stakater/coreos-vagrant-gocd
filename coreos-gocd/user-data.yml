@@ -1,0 +1,113 @@
+#cloud-config
+
+coreos:
+  etcd2:
+    proxy: on
+    # listen on both the official ports and the legacy ports
+    # legacy ports can be omitted if your application doesn't depend on them
+    listen-client-urls: http://0.0.0.0:2379,http://0.0.0.0:4001
+  fleet:
+    public-ip: $private_ipv4
+    etcd_key_prefix: "/stakater/client"
+  units:
+    - name: etcd2.service
+      command: start
+      drop-ins:
+        - name: 60-initial-cluster.conf
+          content: |
+            [Service]
+            EnvironmentFile=/etc/sysconfig/initial-cluster
+    - name: fleet.service
+      command: start
+    - name: install-docker-compose.service
+      command: start
+      content: |
+        [Unit]
+        Description=Install Docker compose
+        Requires=docker.service
+        After=docker.service
+
+        [Service]
+        Type=oneshot
+        RemainAfterExit=true
+        EnvironmentFile=/etc/environment
+        TimeoutStartSec=10min
+        ExecStart=/opt/bin/install-docker-compose.sh
+        [Install]
+        WantedBy=multi-user.target
+    - name: gocd-server.service
+      command: start
+      content: |
+        [Unit]
+        Description=gocd server
+        After=docker.service
+        Requires=docker.service
+        [Service]
+        EnvironmentFile=/etc/environment
+        TimeoutStartSec=0
+        ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
+        ExecStartPre=/usr/bin/docker pull gocd/gocd-server:16.5.0-3305
+        ExecStartPre=-/usr/bin/docker rm %n
+        ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server-data
+        ExecStartPre=-/usr/bin/chown 999:rkt-admin /gocd-data/server-data
+        ExecStartPre=-/usr/bin/chown -R 999:rkt-admin /home/core/shared/gocd-data/conf
+        ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
+                                  -p 8153:8153 \
+                                  -e AGENT_KEY=123456789abcdef \
+                                  -e SERVICE_NAME=gocd-server \
+                                  -v /home/core/shared/gocd-data/conf:/etc/go \
+                                  -v /gocd-data/server-data:/var/lib/go-server \
+                                  gocd/gocd-server:16.5.0-3305"
+        ExecStop=/usr/bin/docker stop %n
+        RestartSec=10
+        Restart=always
+    - name: gocd-agent.service
+      command: start
+      content: |
+        [Unit]
+        Description=gocd agent
+        After=docker.service
+        Requires=docker.service
+        After=gocd-server.service
+        Requires=gocd-server.service
+        [Service]
+        EnvironmentFile=/etc/environment
+        TimeoutStartSec=0
+        ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
+        ExecStartPre=/usr/bin/docker pull stakater/gocd-agent:16.5.0-3305
+        ExecStartPre=-/usr/bin/docker rm %n
+        ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
+                -e AGENT_KEY=123456789abcdef \
+                -e SERVICE_NAME=gocd-agent \
+                -v /var/run/docker.sock:/var/run/docker.sock \
+                -v /usr/bin/docker:/usr/bin/docker \
+                -v /opt/bin/docker-compose:/opt/bin/docker-compose \
+                -v /usr/lib/libdevmapper.so.1.02:/usr/lib/libdevmapper.so.1.02 \
+                -v /usr/lib64/libsystemd.so.0:/usr/lib/libsystemd.so.0 \
+                -v /usr/lib64/libgcrypt.so.20:/usr/lib/libgcrypt.so.20 \
+                -v /gocd-data/sudoers:/etc/sudoers.d \
+                -v /gocd-data:/gocd-data \
+                -v /usr/bin/fleetctl:/usr/bin/fleetctl \
+                -v /etc/registry-certificates:/etc/registry-certificates \
+                -v /app:/app \
+                --link gocd-server.service:go-server \
+                stakater/gocd-agent:16.5.0-3305"
+        ExecStop=-/usr/bin/docker stop %n
+        RestartSec=10
+        Restart=always
+write_files:
+  - path: /etc/sysconfig/initial-cluster
+    permissions: 0600
+    owner: root
+    content: |
+      # Hardcoded server IP
+      ETCD_INITIAL_CLUSTER="server=http://172.17.8.101:2380"
+
+  - path: /opt/bin/install-docker-compose.sh
+    permissions: 0700
+    owner: root
+    content: |
+        #!/bin/bash
+        mkdir -p /opt/bin
+        curl -L `curl -s https://api.github.com/repos/docker/compose/releases/latest | jq -r '.assets[].browser_download_url | select(contains("Linux") and contains("x86_64"))'` > /opt/bin/docker-compose
+        chmod +x /opt/bin/docker-compose
