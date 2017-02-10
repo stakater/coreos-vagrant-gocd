@@ -20,7 +20,7 @@ The `cruise-config.xml` placed in the `shared/gocd-data/conf` directory is mappe
 
 2. Navigate to the `coreos-gocd` directory and run `vagrant up`. Once the vagrant machine is up, you can access the GoCD Server UI from the server's ip address, by default : `http://172.17.9.101:8153`
 
-Troubleshoot
+#####Troubleshooting...
 
 once you ssh into vagrant machine and you don't see any containers; then you can check status like this:
 
