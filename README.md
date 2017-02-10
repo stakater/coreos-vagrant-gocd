@@ -31,8 +31,8 @@ The `cruise-config.xml` placed in the `shared/gocd-data/conf` directory is mappe
 2) Clone this project and get it running!
 
 ```
-git clone https://github.com/coreos/coreos-vagrant/
-cd coreos-vagrant
+git clone https://github.com/stakater/coreos-vagrant-gocd.git
+cd coreos-vagrant-gocd
 ```
 
 3) Startup and SSH
