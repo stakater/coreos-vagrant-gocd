@@ -106,6 +106,32 @@ To check the agent logs, you can do this:
 docker exec -i -t CONTAINER-ID tail -f /var/log/go-agent/go-agent.log
 ```
 
+```
+docker logs CONTAINER-ID
+
+Starting Go Agent to connect to server go-server ...
+[Fri Feb 10 22:21:05 UTC 2017] using default settings from /etc/default/go-agent
+WARN: The environment variable GO_SERVER and GO_SERVER_PORT has been deprecated in favor of GO_SERVER_URL. Please set GO_SERVER_URL instead to a https url (https://example.com:8154/go)
+logFile Environment Variable= null
+Logging to go-agent-bootstrapper.log
+-serverUrl is not a valid url
+Usage: java -jar agent-bootstrapper.jar [options]
+  Options:
+    -help
+      Print this help
+      Default: false
+    -rootCertFile
+      The root certificate from the certificate chain of the GoCD server (in 
+      PEM format)
+  * -serverUrl
+      The GoCD server URL. Must begin with `https://`, and end with `/go`
+    -sslVerificationMode
+      The SSL verification mode.
+      Default: NONE
+      Possible Values: [FULL, NONE, NO_VERIFY_HOST]
+Error starting Go Agent.
+```
+
 ###### The vagrant machines used in this set up are inspired from: https://github.com/coreos/coreos-vagrant
 
 ## Streamlined setup
