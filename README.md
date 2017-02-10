@@ -94,6 +94,18 @@ CONTAINER ID        IMAGE                             COMMAND             CREATE
 82872795564d        gocd/gocd-server:16.5.0-3305      "/sbin/my_init"     3 minutes ago        Up 3 minutes        0.0.0.0:8153->8153/tcp, 8154/tcp   gocd-server.service
 ```
 
+Sometimes, you need a shell inside the container (to create test repositories, etc). docker provides an easy way to do that:
+
+```
+docker exec -i -t CONTAINER-ID bash
+```
+
+To check the agent logs, you can do this:
+
+```
+docker exec -i -t CONTAINER-ID tail -f /var/log/go-agent/go-agent.log
+```
+
 ###### The vagrant machines used in this set up are inspired from: https://github.com/coreos/coreos-vagrant
 
 ## Streamlined setup
