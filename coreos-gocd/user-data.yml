@@ -46,18 +46,21 @@ coreos:
         EnvironmentFile=/etc/environment
         TimeoutStartSec=0
         ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
-        ExecStartPre=/usr/bin/docker pull gocd/gocd-server:16.5.0-3305
+        ExecStartPre=/usr/bin/docker pull gocd/gocd-server:17.1.0
         ExecStartPre=-/usr/bin/docker rm %n
         ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/data
+        ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/plugins
         ExecStartPre=-/usr/bin/cp -r /home/core/shared/gocd-data/conf /gocd-data/server/
         ExecStartPre=-/usr/bin/chown -R 999:rkt-admin /gocd-data/server
+        ExecStartPre=-/usr/bin/wget -q https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.4.0/yaml-config-plugin-0.4.0.jar -P /gocd-data/server/plugins/
         ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
                                   -p 8153:8153 \
                                   -e AGENT_KEY=123456789abcdef \
                                   -e SERVICE_NAME=gocd-server \
                                   -v /gocd-data/server/conf:/etc/go \
                                   -v /gocd-data/server/data:/var/lib/go-server \
-                                  gocd/gocd-server:16.5.0-3305"
+                                  -v /gocd-data/server/plugins/yaml-config-plugin-0.4.0.jar:/var/lib/go-server/plugins/external/yaml-config-plugin-0.4.0.jar
+                                  gocd/gocd-server:17.1.0"
         ExecStop=/usr/bin/docker stop %n
         RestartSec=10
         Restart=always
@@ -72,10 +75,9 @@ coreos:
         EnvironmentFile=/etc/environment
         TimeoutStartSec=0
         ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
-        ExecStartPre=/usr/bin/docker pull stakater/gocd-agent:16.5.0-3305
+        ExecStartPre=/usr/bin/docker pull stakater/gocd-agent:17.1.0
         ExecStartPre=-/usr/bin/docker rm %n
-        ExecStartPre=-/usr/bin/mkdir -p /gocd-data/agent
-        ExecStartPre=-/usr/bin/cp -r /home/core/shared/gocd-data/sudoers /gocd-data/agent/
+        ExecStartPre=/usr/bin/mkdir -p /gocd-data/agent
         ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
                 -e AGENT_KEY=123456789abcdef \
                 -e SERVICE_NAME=gocd-agent \
@@ -85,12 +87,11 @@ coreos:
                 -v /usr/lib/libdevmapper.so.1.02:/usr/lib/libdevmapper.so.1.02 \
                 -v /usr/lib64/libsystemd.so.0:/usr/lib/libsystemd.so.0 \
                 -v /usr/lib64/libgcrypt.so.20:/usr/lib/libgcrypt.so.20 \
-                -v /gocd-data/agent/sudoers:/etc/sudoers.d \
                 -v /usr/bin/fleetctl:/usr/bin/fleetctl \
                 -v /etc/registry-certificates:/etc/registry-certificates \
                 -v /app:/app \
                 --link gocd-server.service:go-server \
-                stakater/gocd-agent:16.5.0-3305"
+                stakater/gocd-agent:17.1.0"
         ExecStop=-/usr/bin/docker stop %n
         RestartSec=10
         Restart=always
