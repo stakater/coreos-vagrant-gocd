@@ -46,21 +46,19 @@ coreos:
         EnvironmentFile=/etc/environment
         TimeoutStartSec=0
         ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
-        ExecStartPre=/usr/bin/docker pull gocd/gocd-server:17.1.0
+        ExecStartPre=/usr/bin/docker pull stakater/gocd-server:17.1.0
         ExecStartPre=-/usr/bin/docker rm %n
         ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/data
         ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/plugins
         ExecStartPre=-/usr/bin/cp -r /home/core/shared/gocd-data/conf /gocd-data/server/
         ExecStartPre=-/usr/bin/chown -R 999:rkt-admin /gocd-data/server
-        ExecStartPre=-/usr/bin/wget -q https://github.com/tomzo/gocd-yaml-config-plugin/releases/download/0.4.0/yaml-config-plugin-0.4.0.jar -P /gocd-data/server/plugins/
         ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
                                   -p 8153:8153 \
                                   -e AGENT_KEY=123456789abcdef \
                                   -e SERVICE_NAME=gocd-server \
                                   -v /gocd-data/server/conf:/etc/go \
                                   -v /gocd-data/server/data:/var/lib/go-server \
-                                  -v /gocd-data/server/plugins/yaml-config-plugin-0.4.0.jar:/var/lib/go-server/plugins/external/yaml-config-plugin-0.4.0.jar
-                                  gocd/gocd-server:17.1.0"
+                                  stakater/gocd-server:17.1.0"
         ExecStop=/usr/bin/docker stop %n
         RestartSec=10
         Restart=always
