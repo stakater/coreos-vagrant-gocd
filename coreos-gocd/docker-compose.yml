@@ -2,6 +2,7 @@ version: "2"
 services:
   go-server:
     image: gocd/gocd-server:17.1.0
+    container_name: gocd-server
     volumes:
         - ./shared/gocd-data/conf/cruise-config.xml:/etc/go/cruise-config.xml
         - ./shared/gocd-data/yaml-config-plugin-0.4.0.jar:/var/lib/go-server/plugins/external/yaml-config-plugin-0.4.0.jar
@@ -13,6 +14,7 @@ services:
         - AGENT_KEY=123456789abcdef
   go-agent:
     image: stakater/gocd-agent:17.1.0
+    container_name: gocd-agent
     depends_on:
         - "go-server"
     volumes:

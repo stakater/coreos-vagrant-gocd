@@ -46,11 +46,12 @@ coreos:
         EnvironmentFile=/etc/environment
         TimeoutStartSec=0
         ExecStartPre=/usr/bin/bash -c "/usr/bin/systemctl set-environment HOSTNAME=$(hostname -i)"
-        ExecStartPre=/usr/bin/docker pull stakater/gocd-server:17.1.0
+        ExecStartPre=/usr/bin/docker pull gocd/gocd-server:17.1.0
         ExecStartPre=-/usr/bin/docker rm %n
         ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/data
         ExecStartPre=-/usr/bin/mkdir -p /gocd-data/server/plugins
         ExecStartPre=-/usr/bin/cp -r /home/core/shared/gocd-data/conf /gocd-data/server/
+        ExecStartPre=-/usr/bin/cp /home/core/shared/gocd-data/yaml-config-plugin-0.4.0.jar /gocd-data/server/
         ExecStartPre=-/usr/bin/chown -R 999:rkt-admin /gocd-data/server
         ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
                                   -p 8153:8153 \
@@ -58,7 +59,8 @@ coreos:
                                   -e SERVICE_NAME=gocd-server \
                                   -v /gocd-data/server/conf:/etc/go \
                                   -v /gocd-data/server/data:/var/lib/go-server \
-                                  stakater/gocd-server:17.1.0"
+                                  -v /gocd-data/server/yaml-config-plugin-0.4.0.jar:/var/lib/go-server/plugins/external/yaml-config-plugin-0.4.0.jar
+                                  gocd/gocd-server:17.1.0"
         ExecStop=/usr/bin/docker stop %n
         RestartSec=10
         Restart=always
@@ -76,6 +78,7 @@ coreos:
         ExecStartPre=/usr/bin/docker pull stakater/gocd-agent:17.1.0
         ExecStartPre=-/usr/bin/docker rm %n
         ExecStartPre=/usr/bin/mkdir -p /gocd-data/agent
+        ExecStartPre=-/usr/bin/cp -r /home/core/shared/gocd-data/sudoers /gocd-data/agent/
         ExecStart=/usr/bin/sh -c "/usr/bin/docker run --rm --name %n \
                 -e AGENT_KEY=123456789abcdef \
                 -e SERVICE_NAME=gocd-agent \
@@ -87,9 +90,14 @@ coreos:
                 -v /usr/lib64/libgcrypt.so.20:/usr/lib/libgcrypt.so.20 \
                 -v /usr/bin/fleetctl:/usr/bin/fleetctl \
                 -v /etc/registry-certificates:/etc/registry-certificates \
-                -v /app:/app \
+                -v /gocd-data/agent/sudoers:/etc/sudoers.d \
                 --link gocd-server.service:go-server \
                 stakater/gocd-agent:17.1.0"
+        ExecStartPost=-/usr/bin/sh -c "/usr/bin/docker exec -it -u go %n /bin/bash -c 'mkdir -p /var/go/.ssh/'"
+        ExecStartPost=-/usr/bin/sh -c "/usr/bin/docker cp /gocd-data/key/id_rsa %n:/var/go/.ssh/"
+        ExecStartPost=-/usr/bin/sh -c "/usr/bin/docker exec -it -u go %n /bin/bash -c 'chown go:go /var/go/.ssh/id_rsa'"
+        ExecStartPost=-/usr/bin/sh -c "/usr/bin/docker exec -it -u go %n /bin/bash -c 'chmod 700 /var/go/.ssh/id_rsa'"
+        ExecStartPost=-/usr/bin/sh -c "/usr/bin/docker exec -it -u go %n /bin/bash -c 'cd /var/go/.ssh && ssh-keyscan github.com >> ~/.ssh/known_hosts'"
         ExecStop=-/usr/bin/docker stop %n
         RestartSec=10
         Restart=always
