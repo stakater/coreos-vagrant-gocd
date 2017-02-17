@@ -16,11 +16,34 @@ The `cruise-config.xml` placed in the `shared/gocd-data/conf` directory is mappe
 
 ##How to Run:
 
+###Requirements
+The GoCD pipeline is read from a remote repository using the yaml config plugin. You need to specify this repository in the cruise-config.xml to pick up the pipeline configuration. You can do this by editing cruise-config.xml in a text editor before starting the GoCD server, or afterwards from the Web UI.
+Uncomment this line and add specify the url `<!--<git url="" />-->`
+Example: `<git url="https://ahmadiq@bitbucket.org/ahmadiq/ci-config.git" />`
+
+###Sample pipeline
+The pipeline configuration from the above example serves as a template that follows the Git pipeline stages outlined [here](https://github.com/stakater/documentation/blob/master/CD/GoCD/ReleaseStageAndApprovePromote/Steps.md#pipeline-stages)
+
+Each pipeline deployment stage, e.g. for test, stage, etc. can have configuration of their own expressed as environment variables for the respective pipeline stage. These environmental variables are then used when deploying the application in docker containers.
+
+###Run through docker compose
+
+The docker compose file can be used to run the GoCD server and agent.
+1. Place your github ssh private key in the shared/key folder. This will be used in the Git pipeline for publishing a branch and tag
+2. Run docker containers `docker-compose up -d`
+3. Run script.sh (with sudo if required by docker) `sudo ./script.sh`
+
+###Run through Vagrant
+
 1. Scroll down to [Streamlined setup](#Streamlined setup) and install all dependencies
 
 2. Navigate to the `coreos-gocd` directory and run `vagrant up`. Once the vagrant machine is up, you can access the GoCD Server UI from the server's ip address, by default : `http://172.17.9.101:8153`
 
 #####Troubleshooting...
+
+Sometimes the pipeline appears to have started processing, however on closer inspection the first stage seems to be stuck, with a yellow progress bar, but no messages in the console output tab.
+This occurs when the Go agent is in pending state. This agent needs to be enabled so that it moves to the idle state. From the Agent page in Go CD, you will see the agent in Pending state. Select it and press the Enable button. This will move the agent to an idle state, and will soon after start processing the pipeline.
+
 
 once you ssh into vagrant machine and you don't see any containers; then you can check status like this:
 
