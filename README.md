@@ -19,7 +19,7 @@ The `cruise-config.xml` placed in the `shared/gocd-data/conf` directory is mappe
 ###Requirements
 The GoCD pipeline is read from a remote repository using the yaml config plugin. You need to specify this repository in the cruise-config.xml to pick up the pipeline configuration. You can do this by editing cruise-config.xml in a text editor before starting the GoCD server, or afterwards from the Web UI.
 Uncomment this line and add specify the url `<!--<git url="" />-->`
-Example: `<git url="https://ahmadiq@bitbucket.org/ahmadiq/ci-config.git" />`
+Example: `<git url="https://github.com/stakater/helloworld.git" />`
 
 ###Sample pipeline
 The pipeline configuration from the above example serves as a template that follows the Git pipeline stages outlined [here](https://github.com/stakater/documentation/blob/master/CD/GoCD/ReleaseStageAndApprovePromote/Steps.md#pipeline-stages)
